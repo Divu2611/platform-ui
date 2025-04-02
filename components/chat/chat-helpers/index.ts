@@ -208,20 +208,36 @@ export const handleHostedChat = async (
 
   let draftMessages = await buildFinalMessages(payload, profile, chatImages)
 
-  let formattedMessages : any[] = []
+  let formattedMessages: any[] = []
   if (provider === "google") {
-    formattedMessages = await adaptMessagesForGoogleGemini(payload, draftMessages)
+    formattedMessages = await adaptMessagesForGoogleGemini(
+      payload,
+      draftMessages
+    )
   } else {
     formattedMessages = draftMessages
   }
 
-  const apiEndpoint =
-    provider === "custom" ? "/api/chat/custom" : `/api/chat/${provider}`
+  // const apiEndpoint =
+  //   provider === "custom" ? "/api/chat/custom" : `/api/chat/${provider}`
 
+  // const requestBody = {
+  //   chatSettings: payload.chatSettings,
+  //   messages: formattedMessages,
+  //   customModelId: provider === "custom" ? modelData.hostedId : ""
+  // }
+
+  const chatMessages = payload.chatMessages
+
+  var chatId = "1"
+  if (chatMessages.length > 1)
+    chatId = chatMessages[chatMessages.length - 2].message.chat_id
+  const apiEndpoint = process.env.BACKEND_DOMAIN + `/api/v1/chat/${chatId}`
+  console.log(apiEndpoint)
+  const messageContent = chatMessages[chatMessages.length - 1].message.content
   const requestBody = {
-    chatSettings: payload.chatSettings,
-    messages: formattedMessages,
-    customModelId: provider === "custom" ? modelData.hostedId : ""
+    body: messageContent,
+    client_id: 10
   }
 
   const response = await fetchChatResponse(
@@ -256,6 +272,7 @@ export const fetchChatResponse = async (
 ) => {
   const response = await fetch(url, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
     signal: controller.signal
   })
