@@ -17,7 +17,11 @@ export async function consumeReadableStream(
       }
 
       if (value) {
-        callback(decoder.decode(value, { stream: true }))
+        const text = decoder.decode(value, { stream: false })
+        const formattedText = text
+          .replace(/\\n/g, "<br>")
+          .replace(/[\t ]+/g, " ")
+        callback(formattedText)
       }
     }
   } catch (error) {

@@ -232,8 +232,9 @@ export const handleHostedChat = async (
   var chatId = "1"
   if (chatMessages.length > 1)
     chatId = chatMessages[chatMessages.length - 2].message.chat_id
-  const apiEndpoint = process.env.BACKEND_DOMAIN + `/api/v1/chat/${chatId}`
-  console.log(apiEndpoint)
+  const apiEndpoint =
+    process.env.NEXT_PUBLIC_BACKEND_DOMAIN + `/api/v1/chat/${chatId}`
+
   const messageContent = chatMessages[chatMessages.length - 1].message.content
   const requestBody = {
     body: messageContent,
