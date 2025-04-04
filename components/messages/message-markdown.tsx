@@ -10,57 +10,168 @@ interface MessageMarkdownProps {
   content: string
 }
 
-// Custom CSS to remove margins
+// Custom CSS to remove margins and fix list height issues, plus bold headers
 const noMarginStyle = `
+  /* Reset everything to avoid browser defaults */
   ul, ol, li, p, h1, h2, h3, h4, h5, h6, blockquote {
     margin: 0 !important;
     padding: 0 !important;
+    line-height: 1.5 !important;
   }
-  ul, ol {
+  
+  /* Bold section headers */
+  .section-header {
+    font-weight: bold !important;
+  }
+  
+  /* Fix list container heights */
+  ul, ol, p, li {
     list-style-position: inside !important;
+    height: 'fit-content' !important;
+    min-height: 0 !important;
+    max-height: 'fit-content' !important;
+    display: table !important; /* Crucial for height matching */
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  
+  /* Fix list item display */
+  li, ul, ol {
+    display: table-row !important; /* Crucial for height matching */
+    height: 'fit-content' !important;
+  }
+  
+  /* Disable default markers */
+  ul, ol, li {
+    list-style: none !important;
+  }
+  
+  /* Override Tailwind prose spacing */
+  .prose ul, .prose ol, .prose li, .prose p {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .prose ul li, .prose ol li {
+    padding-left: 0 !important;
+  }
+  
+  /* Remove any padding that might be causing the gap */
+  .prose > ul, .prose > ol {
+    padding: 0 !important;
+    margin: 0 !important;
   }
 `
 
 export const MessageMarkdown: FC<MessageMarkdownProps> = ({ content }) => {
+  console.log("MessageMarkdown content:", content)
   // Convert all <br> tags to \n line breaks for consistent behavior
   const processedContent = content
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<br\s*>/gi, "\n")
 
-  // For content with HTML tags (except <br> which we converted)
   if (/<[a-z][\s\S]*>/i.test(content) && !/<br\s*\/?>/i.test(content)) {
-    // Sanitize HTML content for security
-    const sanitizedContent = DOMPurify.sanitize(processedContent)
+    let processedHtml = processedContent.replace(
+      /(<p>)(.*?:)(<\/p>)/g,
+      '<p class="section-header">$2</p>'
+    )
 
+    const sanitizedContent = DOMPurify.sanitize(processedHtml)
     return (
       <>
         <style>{noMarginStyle}</style>
-        <div className="prose dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 min-w-full whitespace-pre-wrap break-words">
+        <div
+          className="prose dark:prose-invert min-w-full whitespace-pre-wrap break-words"
+          style={{ lineHeight: 1, margin: 0, padding: 0 }}
+        >
           {parse(sanitizedContent)}
         </div>
       </>
     )
   }
 
-  // Default rendering with markdown
   return (
     <>
       <style>{noMarginStyle}</style>
       <MessageMarkdownMemoized
-        className="prose dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 min-w-full whitespace-pre-wrap break-words"
+        className="prose dark:prose-invert min-w-full whitespace-pre-wrap break-words"
         remarkPlugins={[remarkGfm, remarkMath]}
         components={{
-          p({ children }) {
-            return <p className="my-0">{children}</p>
+          p(props) {
+            const { children, ...rest } = props
+            const textContent = React.Children.toArray(children)
+              .map(child => (typeof child === "string" ? child : ""))
+              .join("")
+            const isHeader = textContent.trim().endsWith(":")
+
+            return (
+              <p
+                {...rest}
+                className={isHeader ? "section-header" : ""}
+                style={{
+                  margin: 0,
+                  padding: 0,
+                  lineHeight: 0,
+                  height: "auto",
+                  fontWeight: isHeader ? "bold" : "normal"
+                }}
+              >
+                {children}
+              </p>
+            )
           },
           ul({ children }) {
-            return <ul className="my-0 pl-0">{children}</ul>
+            return (
+              <ul
+                style={{
+                  margin: 0,
+                  padding: 0,
+                  lineHeight: 0,
+                  listStyle: "none",
+                  width: "100%",
+                  height: "auto"
+                }}
+              >
+                {children}
+              </ul>
+            )
           },
           ol({ children }) {
-            return <ol className="my-0 pl-0">{children}</ol>
+            return (
+              <ol
+                style={{
+                  margin: 0,
+                  padding: 0,
+                  lineHeight: 0,
+                  listStyle: "none",
+                  width: "100%",
+                  height: "auto",
+                  counterReset: "list-counter"
+                }}
+              >
+                {children}
+              </ol>
+            )
           },
-          li({ children }) {
-            return <li className="my-0">{children}</li>
+          li(props) {
+            const { children, node, ...rest } = props
+            return (
+              <li
+                {...rest}
+                style={{
+                  margin: 0,
+                  padding: 0,
+                  lineHeight: 0,
+                  height: "auto",
+                  listStylePosition: "inside"
+                }}
+              >
+                {children}
+                {/* <span style={{ flex: 1, margin: 0, padding: 0 }}>
+                  {children}
+                </span> */}
+              </li>
+            )
           },
           img({ node, ...props }) {
             return <img className="max-w-[67%]" {...props} />
@@ -71,11 +182,11 @@ export const MessageMarkdown: FC<MessageMarkdownProps> = ({ content }) => {
             const firstChildAsString = React.isValidElement(firstChild)
               ? (firstChild as React.ReactElement).props.children
               : firstChild
+
             if (firstChildAsString === "▍") {
-              return (
-                <span className="mt-1 animate-pulse cursor-default">▍</span>
-              )
+              return <span className="animate-pulse cursor-default">▍</span>
             }
+
             if (typeof firstChildAsString === "string") {
               childArray[0] = firstChildAsString.replace("`▍`", "▍")
             }
@@ -90,6 +201,7 @@ export const MessageMarkdown: FC<MessageMarkdownProps> = ({ content }) => {
                 </code>
               )
             }
+
             return (
               <MessageCodeBlock
                 key={Math.random()}
