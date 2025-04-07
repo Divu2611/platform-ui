@@ -255,13 +255,7 @@ export const Message: FC<MessageProps> = ({
 
               <div className="font-semibold">
                 {message.role === "assistant"
-                  ? message.assistant_id
-                    ? assistants.find(
-                        assistant => assistant.id === message.assistant_id
-                      )?.name
-                    : selectedAssistant
-                      ? selectedAssistant?.name
-                      : MODEL_DATA?.modelName
+                  ? "Assistant"
                   : profile?.display_name ?? profile?.username}
               </div>
             </div>
