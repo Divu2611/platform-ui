@@ -64,7 +64,6 @@ const noMarginStyle = `
 `
 
 export const MessageMarkdown: FC<MessageMarkdownProps> = ({ content }) => {
-  console.log("MessageMarkdown content:", content)
   // Convert all <br> tags to \n line breaks for consistent behavior
   const processedContent = content
     .replace(/<br\s*\/?>/gi, "\n")

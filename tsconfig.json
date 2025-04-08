@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     "./.next/types/**/*.ts",
     "i18nConfig.js"
-  ],
+, "app/api/getSession.js"  ],
   "exclude": ["node_modules"]
 }
