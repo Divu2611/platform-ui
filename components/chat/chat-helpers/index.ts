@@ -271,9 +271,22 @@ export const fetchChatResponse = async (
   setIsGenerating: React.Dispatch<React.SetStateAction<boolean>>,
   setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
 ) => {
+  const tokenResponse = await fetch("/api/session")
+
+  if (!tokenResponse.ok) {
+    throw new Error("Failed to fetch JWT token")
+  }
+
+  const responseData = await tokenResponse.json()
+
+  const jwtToken = responseData.token
+
   const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${jwtToken}`
+    },
     body: JSON.stringify(body),
     signal: controller.signal
   })
