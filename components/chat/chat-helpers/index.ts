@@ -2,6 +2,7 @@
 
 import { createChatFiles } from "@/db/chat-files"
 import { createChat } from "@/db/chats"
+import { createThread, getThreadByChatId } from "@/db/threads"
 import { createMessageFileItems } from "@/db/message-file-items"
 import { createMessages, updateMessage } from "@/db/messages"
 import { uploadMessageImage } from "@/db/storage/message-images"
@@ -22,6 +23,8 @@ import {
 import React from "react"
 import { toast } from "sonner"
 import { v4 as uuidv4 } from "uuid"
+
+var threadId: string
 
 export const validateChatSettings = (
   chatSettings: ChatSettings | null,
@@ -229,11 +232,19 @@ export const handleHostedChat = async (
 
   const chatMessages = payload.chatMessages
 
-  var chatId = "1"
-  if (chatMessages.length > 1)
-    chatId = chatMessages[chatMessages.length - 2].message.chat_id
+  if (chatMessages.length > 1) {
+    var chatId = chatMessages[chatMessages.length - 2].message.chat_id
+
+    const existingThread = await getThreadByChatId(chatId)
+    if (existingThread) {
+      threadId = existingThread.id
+    }
+  } else {
+    threadId = uuidv4()
+  }
+
   const apiEndpoint =
-    process.env.NEXT_PUBLIC_BACKEND_DOMAIN + `/api/v1/chat/${chatId}`
+    process.env.NEXT_PUBLIC_BACKEND_DOMAIN + `/api/v1/chat/${threadId}`
 
   const messageContent = chatMessages[chatMessages.length - 1].message.content
   const requestBody = {
@@ -411,6 +422,11 @@ export const handleCreateChat = async (
   )
 
   setChatFiles(prev => [...prev, ...newMessageFiles])
+
+  await createThread({
+    id: threadId,
+    chat_id: createdChat.id
+  })
 
   return createdChat
 }
