@@ -1128,6 +1128,35 @@ export type Database = {
           },
         ]
       }
+      threads: {
+        Row: {
+          chat_id: string
+          created_at: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          chat_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          chat_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "threads_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tool_workspaces: {
         Row: {
           created_at: string
